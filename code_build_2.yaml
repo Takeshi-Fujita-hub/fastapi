@@ -27,7 +27,16 @@ Parameters:
     Default: fastapi
     Description: Name of the ECR repository
 
+
 Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: fastapi-artifact-store
+      Tags:
+        - Key: Name
+          Value: CodePipelineArtifactStore
+
   MyECRRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -38,18 +47,18 @@ Resources:
   CodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ECRRepositoryName}-pipeline-role
+      RoleName: !Sub "${ECRRepositoryName}-pipeline-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: CodePipelineInlinePolicy
+        - PolicyName: "CodePipelineInlinePolicy"
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -61,14 +70,16 @@ Resources:
                   - s3:GetObjectVersion
                   - s3:PutObject
                   - s3:ListBucket
-                Resource: '*'
+                Resource:
+                  - arn:aws:s3:::fastapi-artifact-store
+                  - arn:aws:s3:::fastapi-artifact-store/*
 
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ECRRepositoryName}-codebuild-role
+      RoleName: !Sub "${ECRRepositoryName}-codebuild-role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -81,9 +92,10 @@ Resources:
   MyCodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${ECRRepositoryName}-build
+      Name: !Sub "${ECRRepositoryName}-build"
       Source:
         Type: CODEPIPELINE
+        BuildSpec: custom-buildspec.yml
       Environment:
         Type: LINUX_CONTAINER
         Image: aws/codebuild/standard:7.0
@@ -95,11 +107,12 @@ Resources:
 
   MyPipeline:
     Type: AWS::CodePipeline::Pipeline
+    DependsOn: ArtifactBucket
     Properties:
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
-        Location: !Sub ${AWS::StackName}-artifact-store
+        Location: fastapi-artifact-store
       Stages:
         - Name: Source
           Actions:
@@ -108,12 +121,12 @@ Resources:
                 Category: Source
                 Owner: AWS
                 Provider: CodeStarSourceConnection
-                Version: 1
+                Version: "1"
               OutputArtifacts:
                 - Name: SourceOutput
               Configuration:
                 ConnectionArn: !Ref ConnectionArn
-                FullRepositoryId: !Sub ${GitHubRepoOwner}/${GitHubRepoName}
+                FullRepositoryId: !Sub "${GitHubRepoOwner}/${GitHubRepoName}"
                 BranchName: !Ref GitHubBranch
                 DetectChanges: true
               RunOrder: 1
@@ -124,9 +137,10 @@ Resources:
                 Category: Build
                 Owner: AWS
                 Provider: CodeBuild
-                Version: '1'
+                Version: "1"
               InputArtifacts:
                 - Name: SourceOutput
               Configuration:
                 ProjectName: !Ref MyCodeBuildProject
+                PrimarySource: SourceOutput
               RunOrder: 1
