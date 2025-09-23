@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CodeBuild project with GitHub App connection to build and push Docker image to ECR
+
+Parameters:
+  GitHubRepoUrl:
+    Type: String
+    Default: https://github.com/Takeshi-Fujita-hub/fastapi.git
+    Description: GitHub repository URL (e.g., https://github.com/your-user/your-repo)
+
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: Branch to build from
+
+  ConnectionArn:
+    Type: String
+    Default: arn:aws:codeconnections:ap-northeast-1:456551560581:connection/8f3265f4-68af-478a-88b9-e022c0a4a69d
+    Description: ARN of the AWS CodeStar GitHub App connection
+
+  ECRRepositoryName:
+    Type: String
+    Default: my-app
+    Description: Name of the ECR repository
+
+  CodeBuildProjectName:
+    Type: String
+    Default: my-app-build
+    Description: Name of the CodeBuild project
+
+Resources:
+  MyECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+        RepositoryName: !Ref ECRRepositoryName
+        ImageScanningConfiguration:
+            ScanOnPush: true
+        Tags:
+        - Key: Name
+          Value: !Ref ECRRepositoryName
+
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${CodeBuildProjectName}-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+
+  MyCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref CodeBuildProjectName
+      Source:
+        Type: CODECONNECTION
+        Location: !Ref GitHubRepoUrl
+        SourceIdentifier: !Ref GitHubBranch
+        ConnectionArn: !Ref ConnectionArn
+        GitCloneDepth: 1
+        BuildSpec: buildspec.yml
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/standard:7.0
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: true
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      TimeoutInMinutes: 30
