@@ -32,7 +32,7 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello from FastAPI on 2025/09/23"}
+    return {"message": "Hello from FastAPI"}
 
 @app.get("/healthz")
 def health_check():
