@@ -1,0 +1,57 @@
+version: 0.2
+env:
+  variables:
+    ECR_REPO_NAME: app-repo
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=$COMMIT_HASH
+      - IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_REPO_NAME:$IMAGE_TAG
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t $IMAGE_URI .
+      - docker push $IMAGE_URI
+      - echo Writing taskdef.json and appspec.yaml...
+      - |
+        cat > taskdef.json <<EOF
+        {
+          "family": "app-blue",
+          "networkMode": "awsvpc",
+          "containerDefinitions": [
+            {
+              "name": "app",
+              "image": "$IMAGE_URI",
+              "essential": true,
+              "portMappings": [
+                {
+                  "containerPort": 80
+                }
+              ]
+            }
+          ],
+          "requiresCompatibilities": ["FARGATE"],
+          "cpu": "256",
+          "memory": "512",
+          "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecs-task-role"
+        }
+        EOF
+      - |
+        cat > appspec.yaml <<EOF
+        version: 1
+        Resources:
+          - TargetService:
+              Type: AWS::ECS::Service
+              Properties:
+                TaskDefinition: <REPLACED_AT_DEPLOY>
+                LoadBalancerInfo:
+                  ContainerName: app
+                  ContainerPort: 80
+        EOF
+artifacts:
+  files:
+    - taskdef.json
+    - appspec.yaml
