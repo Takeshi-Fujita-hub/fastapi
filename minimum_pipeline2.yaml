@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CICD pipeline with GitHub (via CodeStar Connection), CodeBuild,
-  ECR, and CodeDeploy Blue/Green
+Description: CICD pipeline with GitHub (via CodeStar Connection), CodeBuild, ECR, and CodeDeploy Blue/Green
 
 Parameters:
   GitHubRepoOwner:
@@ -47,7 +46,7 @@ Resources:
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${GitHubRepoName}-codebuild-role
+      RoleName: !Sub "${GitHubRepoName}-codebuild-role"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -63,7 +62,7 @@ Resources:
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${GitHubRepoName}-build
+      Name: !Sub "${GitHubRepoName}-build"
       Source:
         Type: CODEPIPELINE
       Environment:
@@ -81,7 +80,7 @@ Resources:
   PipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${GitHubRepoName}-pipeline-role
+      RoleName: !Sub "${GitHubRepoName}-pipeline-role"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -99,13 +98,14 @@ Resources:
                   - codepipeline:*
                   - codebuild:*
                   - codedeploy:*
+                  - codestar-connections:UseConnection
                   - s3:*
-                Resource: '*'
+                Resource: "*"
 
   AppPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: !Sub ${GitHubRepoName}-cicd-pipeline
+      Name: !Sub "${GitHubRepoName}-cicd-pipeline"
       RoleArn: !GetAtt PipelineRole.Arn
       ArtifactStore:
         Type: S3
@@ -121,7 +121,7 @@ Resources:
                 Version: '1'
               Configuration:
                 ConnectionArn: !Ref ConnectionArn
-                FullRepositoryId: !Sub ${GitHubRepoOwner}/${GitHubRepoName}
+                FullRepositoryId: !Sub "${GitHubRepoOwner}/${GitHubRepoName}"
                 BranchName: !Ref GitHubBranch
                 OutputArtifactFormat: CODE_ZIP
               OutputArtifacts:
