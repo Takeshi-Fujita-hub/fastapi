@@ -24,7 +24,7 @@ phases:
       - |
         cat > taskdef.json <<EOF
         {
-          "family": "app-blue",
+          "family": "demo-app-green",
           "networkMode": "awsvpc",
           "containerDefinitions": [
             {
