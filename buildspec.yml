@@ -46,7 +46,7 @@ phases:
         EOF
       - |
         cat > appspec.yaml <<EOF
-        version: 1
+        version: 0.0
         Resources:
           - TargetService:
               Type: AWS::ECS::Service
