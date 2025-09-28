@@ -21,17 +21,15 @@ phases:
       - docker build -t $IMAGE_URI .
       - docker push $IMAGE_URI
       - echo Writing taskdef.json and appspec.yaml...
-
-      # 変数展開用テンプレートを作成
       - |
-        cat <<EOF > taskdef.template.json
+        cat > taskdef.json <<EOF
         {
           "family": "demo-app-green",
           "networkMode": "awsvpc",
           "containerDefinitions": [
             {
               "name": "app",
-              "image": "${IMAGE_URI}",
+              "image": "$IMAGE_URI",
               "essential": true,
               "portMappings": [
                 {
@@ -46,13 +44,6 @@ phases:
           "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecs-task-role"
         }
         EOF
-
-      # 環境変数を展開して taskdef.json を生成
-      - envsubst < taskdef.template.json > taskdef.json
-      - echo "Generated taskdef.json:"
-      - cat taskdef.json
-
-      # appspec.yaml はそのままでOK
       - |
         cat > appspec.yaml <<EOF
         version: 0.0
@@ -65,8 +56,6 @@ phases:
                   ContainerName: app
                   ContainerPort: 80
         EOF
-      - echo "Generated appspec.yaml:"
-      - cat appspec.yaml
 
 artifacts:
   files:
