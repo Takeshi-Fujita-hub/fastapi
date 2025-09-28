@@ -3,30 +3,7 @@ version: 0.2
 phases:
   build:
     commands:
-      - echo Writing taskdef.json and appspec.yaml...
-      - |
-        cat > taskdef.json <<EOF
-        {
-          "family": "demo-app-green",
-          "networkMode": "awsvpc",
-          "containerDefinitions": [
-            {
-              "name": "app",
-              "image": "dummy-image",
-              "essential": true,
-              "portMappings": [
-                {
-                  "containerPort": 80
-                }
-              ]
-            }
-          ],
-          "requiresCompatibilities": ["FARGATE"],
-          "cpu": "256",
-          "memory": "512",
-          "executionRoleArn": "arn:aws:iam::456551560581:role/ecs-task-role"
-        }
-        EOF
+      - echo "{}" > taskdef.json
       - |
         cat > appspec.yaml <<EOF
         version: 0.0
@@ -44,4 +21,3 @@ artifacts:
   files:
     - taskdef.json
     - appspec.yaml
-  base-directory: .
