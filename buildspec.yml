@@ -18,17 +18,19 @@ phases:
       - docker tag $REPOSITORY_URI:$IMAGE_TAG $IMAGE_URI
 
   post_build:
-    commands:
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - docker push $IMAGE_URI
-      - echo Creating taskdef.json and appspec.yaml files...
-      # taskdef.json のプレースホルダーを実際の値に置換する
-      - sed -i "s|<IMAGE_URI>|${IMAGE_URI}|g" taskdef.json
-      - sed -i "s|<CONTAINER_NAME>|${CONTAINER_NAME}|g" taskdef.json
-      - sed -i "s|<TASK_EXECUTION_ROLE_ARN>|${TASK_EXECUTION_ROLE_ARN}|g" taskdef.json
-      - cat taskdef.json # 中身を確認
+  commands:
+    - echo Build completed on `date`
+    - echo Pushing the Docker images...
+    - docker push $REPOSITORY_URI:$IMAGE_TAG
+    - docker push $IMAGE_URI
+    - echo Creating taskdef.json and appspec.yaml files...
+    - sed -i "s|<IMAGE_URI>|${IMAGE_URI}|g" taskdef.json
+    - sed -i "s|<CONTAINER_NAME>|${CONTAINER_NAME}|g" taskdef.json
+    - sed -i "s|<TASK_EXECUTION_ROLE_ARN>|${TASK_EXECUTION_ROLE_ARN}|g" taskdef.json
+    - sed -i "s|my-app-container|${CONTAINER_NAME}|g" appspec.yaml
+    - cat taskdef.json
+    - cat appspec.yaml
+
 
 artifacts:
   files:

@@ -1,6 +1,6 @@
-# taskdef.json
+
 {
-  "family": "my-app-task",
+  "family": "app-blue",
   "executionRoleArn": "<TASK_EXECUTION_ROLE_ARN>",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
@@ -8,7 +8,7 @@
   "memory": "512",
   "containerDefinitions": [
     {
-      "name": "<CONTAINER_NAME>",
+      "name": "app",
       "image": "<IMAGE_URI>",
       "essential": true,
       "portMappings": [
